@@ -2,6 +2,8 @@
 
 <div align="center">
 
+[中文](README.md) | [English](README.en.md)
+
 ![USBridge logo](assets/logo.png)
 
 **把 USB 设备一键桥接进 WSL 的 Windows 桌面工具，专治 Android ADB 调试的"设备消失"问题。**
