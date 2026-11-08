@@ -1,0 +1,15 @@
+# build artifacts
+dist/
+pack/
+cache/
+
+# user / IDE
+.vs/
+*.user
+*.suo
+
+# local test artifacts
+*.png.tmp
+shot*.png
+brand.png
+terms.png

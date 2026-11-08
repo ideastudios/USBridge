@@ -1,0 +1,158 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="设置 — USBridge" Width="600" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Background="{DynamicResource BgWindow}"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" FontSize="12.5"
+        FontFamily="Segoe UI, Microsoft YaHei UI">
+  <Window.Resources>
+
+    <Style x:Key="BtnBase" TargetType="Button">
+      <Setter Property="Background" Value="{DynamicResource BtnBg}"/>
+      <Setter Property="Foreground" Value="{DynamicResource BtnFg}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BtnBorder}"/>
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="Padding" Value="14,6"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="bd" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                    CornerRadius="7" Padding="{TemplateBinding Padding}">
+              <Grid>
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  RecognizesAccessKey="False"
+                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+                <Border x:Name="ovWhite" Background="#FFFFFF" CornerRadius="6" Opacity="0" IsHitTestVisible="False"/>
+                <Border x:Name="ovBlack" Background="#000000" CornerRadius="6" Opacity="0" IsHitTestVisible="False"/>
+              </Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ovWhite" Property="Opacity" Value="0.07"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="ovWhite" Property="Opacity" Value="0.02"/>
+                <Setter TargetName="ovBlack" Property="Opacity" Value="0.25"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="BtnPrimary" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+      <Setter Property="Background" Value="{DynamicResource PrimaryBg}"/>
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryFg}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBorder}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style x:Key="DarkBox" TargetType="TextBox">
+      <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+      <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TextBox">
+            <Border x:Name="bd" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="7">
+              <ScrollViewer x:Name="PART_ContentHost" Margin="10,7" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource ControlBorderHover}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="DarkCheck" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource TextBody}"/>
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="CheckBox">
+            <StackPanel Orientation="Horizontal" Background="Transparent">
+              <Border x:Name="box" Width="17" Height="17" CornerRadius="4" BorderThickness="1"
+                      BorderBrush="{DynamicResource CheckBoxBorder}" Background="{DynamicResource InputBg}"
+                      VerticalAlignment="Center">
+                <Path x:Name="chk" Data="M3.2,8.6 L6.6,11.8 L13,4.6" Stroke="#FFFFFF"
+                      StrokeThickness="1.8" Visibility="Collapsed" Stretch="Uniform"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Margin="2"/>
+              </Border>
+              <ContentPresenter Margin="9,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="False"/>
+            </StackPanel>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="chk" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="box" Property="Background" Value="{DynamicResource AccentStrong}"/>
+                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource AccentStrong}"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+  </Window.Resources>
+
+  <StackPanel Margin="18,16,18,14">
+    <TextBlock Text="adb.exe 路径（Windows 端）" Foreground="{DynamicResource TextDim}" FontSize="12" Margin="2,0,0,7"/>
+    <DockPanel LastChildFill="True">
+      <Button x:Name="BrowseBtn" DockPanel.Dock="Right" Style="{StaticResource BtnBase}" Content="浏览…" Margin="8,0,0,0"/>
+      <Button x:Name="DetectBtn" DockPanel.Dock="Right" Style="{StaticResource BtnBase}" Content="自动检测" Margin="8,0,0,0"/>
+      <TextBox x:Name="AdbPathBox" Style="{StaticResource DarkBox}"/>
+    </DockPanel>
+    <TextBlock Text="留空则自动搜索 PATH、程序目录 tools\adb 与常见 SDK 安装位置。用于「ADB 模式」的 adb 修复流程（kill-server / start-server）。"
+               Foreground="{DynamicResource TextFaint}" FontSize="11" TextWrapping="Wrap" Margin="2,7,0,0"/>
+
+    <Border Background="{DynamicResource BarBorder}" Height="1" Margin="0,14,0,14"/>
+
+    <CheckBox x:Name="ChkFixAlways" Style="{StaticResource DarkCheck}" Margin="2,0,0,11"
+              Content="对任何 USB 设备都执行 ADB 修复流程（默认仅对识别为 Android 的设备生效）"/>
+    <CheckBox x:Name="ChkWslAdb" Style="{StaticResource DarkCheck}" Margin="2,0,0,11"
+              Content="连接后自动在 WSL 内重启 adb 服务（以 root 运行，规避 udev 权限问题）"/>
+    <CheckBox x:Name="ChkVhci" Style="{StaticResource DarkCheck}" Margin="2,0,0,11"
+              Content="连接前自动在 WSL 内加载 vhci_hcd 内核模块（已内置时自动跳过）"/>
+
+    <Border Background="{DynamicResource BarBorder}" Height="1" Margin="0,14,0,14"/>
+
+    <TextBlock Text="系统托盘" Foreground="{DynamicResource TextDim}" FontSize="12" Margin="2,0,0,7"/>
+    <CheckBox x:Name="ChkTrayIcon" Style="{StaticResource DarkCheck}" Margin="2,0,0,11"
+              Content="启用系统托盘图标（左键打开主窗口，右键快捷菜单）"/>
+    <CheckBox x:Name="ChkTrayMinimize" Style="{StaticResource DarkCheck}" Margin="2,0,0,11"
+              Content="最小化时隐藏到托盘"/>
+    <CheckBox x:Name="ChkTrayClose" Style="{StaticResource DarkCheck}" Margin="2,0,0,11"
+              Content="点击关闭按钮时隐藏到托盘（从托盘菜单退出）"/>
+
+    <Border Background="{DynamicResource BarBorder}" Height="1" Margin="0,14,0,14"/>
+
+    <TextBlock x:Name="LinkText" FontSize="11.5" TextWrapping="Wrap">
+      <Run Text="参考项目：" Foreground="{DynamicResource TextFaint}"/>
+      <Hyperlink NavigateUri="https://github.com/dorssel/usbipd-win" Foreground="{DynamicResource Accent}"><Run Text="usbipd-win"/></Hyperlink>
+      <Run Text="    " Foreground="{DynamicResource TextFaint}"/>
+      <Hyperlink NavigateUri="https://github.com/nickbeth/wsl-usb-manager" Foreground="{DynamicResource Accent}"><Run Text="wsl-usb-manager"/></Hyperlink>
+    </TextBlock>
+
+    <DockPanel Margin="0,16,0,0" LastChildFill="False">
+      <TextBlock Text="USBridge v1.2.0 · WSL USB 管家" Foreground="{DynamicResource TextFaint}" FontSize="11" VerticalAlignment="Center"/>
+      <Button x:Name="CancelBtn" DockPanel.Dock="Right" Style="{StaticResource BtnBase}" Content="取消" Margin="8,0,0,0"/>
+      <Button x:Name="OkBtn" DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}" Content="保存"/>
+    </DockPanel>
+  </StackPanel>
+</Window>

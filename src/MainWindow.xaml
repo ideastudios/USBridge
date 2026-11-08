@@ -1,0 +1,445 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="USBridge · WSL USB 管家" Width="1080" Height="700" MinWidth="920" MinHeight="600"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource BgWindow}"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" FontSize="12.5"
+        FontFamily="Segoe UI, Microsoft YaHei UI">
+  <Window.Resources>
+
+    <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+    <!-- ============ 按钮样式 ============ -->
+    <Style x:Key="BtnBase" TargetType="Button">
+      <Setter Property="Background" Value="{DynamicResource BtnBg}"/>
+      <Setter Property="Foreground" Value="{DynamicResource BtnFg}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BtnBorder}"/>
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="Padding" Value="14,6"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="SnapsToDevicePixels" Value="True"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="bd" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                    CornerRadius="7" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+              <Grid>
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  RecognizesAccessKey="False"
+                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+                <Border x:Name="ovWhite" Background="#FFFFFF" CornerRadius="6" Opacity="0" IsHitTestVisible="False"/>
+                <Border x:Name="ovBlack" Background="#000000" CornerRadius="6" Opacity="0" IsHitTestVisible="False"/>
+              </Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ovWhite" Property="Opacity" Value="0.07"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="ovWhite" Property="Opacity" Value="0.02"/>
+                <Setter TargetName="ovBlack" Property="Opacity" Value="0.25"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="BtnPrimary" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+      <Setter Property="Background" Value="{DynamicResource PrimaryBg}"/>
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryFg}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBorder}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style x:Key="BtnGhost" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Padding" Value="10,5"/>
+    </Style>
+
+    <Style x:Key="BtnSm" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+      <Setter Property="FontSize" Value="11.5"/>
+      <Setter Property="Padding" Value="10,4"/>
+    </Style>
+
+    <!-- ============ 开关样式 ============ -->
+    <Style x:Key="Switch" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource TextBody}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="CheckBox">
+            <StackPanel Orientation="Horizontal" Background="Transparent">
+              <Grid Width="40" Height="22" VerticalAlignment="Center">
+                <Border x:Name="track" CornerRadius="11" Background="{DynamicResource ControlTrack}"/>
+                <Border x:Name="thumb" Width="16" Height="16" CornerRadius="8"
+                        Background="{DynamicResource ThumbIdle}" HorizontalAlignment="Left" Margin="3,0,0,0"
+                        VerticalAlignment="Center"/>
+              </Grid>
+              <ContentPresenter Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                VerticalAlignment="Center" Margin="9,0,0,0"
+                                RecognizesAccessKey="False"/>
+            </StackPanel>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="track" Property="Background" Value="{DynamicResource AccentStrong}"/>
+                <Setter TargetName="thumb" Property="Background" Value="#FFFFFF"/>
+                <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
+                <Setter TargetName="thumb" Property="Margin" Value="0,0,3,0"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ============ 下拉框样式 ============ -->
+    <Style x:Key="DarkCombo" TargetType="ComboBox">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="ItemContainerStyle">
+        <Setter.Value>
+          <Style TargetType="ComboBoxItem">
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                  <Border x:Name="bd" Background="Transparent" Padding="10,6" CornerRadius="5" Margin="4,2">
+                    <ContentPresenter TextElement.Foreground="{DynamicResource TextPrimary}"/>
+                  </Border>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                      <Setter TargetName="bd" Property="Background" Value="{DynamicResource MenuItemHover}"/>
+                    </Trigger>
+                    <Trigger Property="IsHighlighted" Value="True">
+                      <Setter TargetName="bd" Property="Background" Value="{DynamicResource MenuItemHover}"/>
+                    </Trigger>
+                    <Trigger Property="IsSelected" Value="True">
+                      <Setter TargetName="bd" Property="Background" Value="{DynamicResource MenuItemSelected}"/>
+                    </Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+          </Style>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ComboBox">
+            <Grid>
+              <ToggleButton Focusable="False" ClickMode="Press"
+                            IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                <ToggleButton.Template>
+                  <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="bg" Background="{DynamicResource ControlBg}" BorderBrush="{DynamicResource ControlBorder}"
+                            BorderThickness="1" CornerRadius="7"/>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="bg" Property="BorderBrush" Value="{DynamicResource ControlBorderHover}"/>
+                      </Trigger>
+                      <Trigger Property="IsChecked" Value="True">
+                        <Setter TargetName="bg" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                      </Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </ToggleButton.Template>
+              </ToggleButton>
+              <ContentPresenter Margin="11,0,28,0" VerticalAlignment="Center"
+                                Content="{TemplateBinding SelectionBoxItem}"
+                                ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                IsHitTestVisible="False"/>
+              <Path Data="M0,0 L4,4 8,0" Stroke="{DynamicResource TextDim}" StrokeThickness="1.6"
+                    HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,11,0"/>
+              <Popup Placement="Bottom" AllowsTransparency="True" StaysOpen="False" PopupAnimation="Fade"
+                     IsOpen="{TemplateBinding IsDropDownOpen}">
+                <Border Background="{DynamicResource ControlBg}" BorderBrush="{DynamicResource ControlBorder}"
+                        BorderThickness="1" CornerRadius="8"
+                        Margin="0,5,0,10" MinWidth="{TemplateBinding ActualWidth}"
+                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsPresenter/>
+                  </ScrollViewer>
+                </Border>
+              </Popup>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ============ 瘦滚动条 ============ -->
+    <Style TargetType="ScrollBar">
+      <Setter Property="Width" Value="8"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ScrollBar">
+            <Grid Background="Transparent">
+              <Track x:Name="PART_Track" IsDirectionReversed="True">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" IsHitTestVisible="False"/>
+                </Track.DecreaseRepeatButton>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" IsHitTestVisible="False"/>
+                </Track.IncreaseRepeatButton>
+                <Track.Thumb>
+                  <Thumb>
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Border Background="{DynamicResource ControlTrack}" CornerRadius="4" Margin="1,2"/>
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ============ 设备卡片模板 ============ -->
+    <DataTemplate x:Key="DeviceCard">
+      <Border BorderBrush="{DynamicResource RowSeparator}" BorderThickness="0,0,0,1">
+        <Grid Margin="16,9">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+
+          <!-- 图标 -->
+          <Border Width="40" Height="40" CornerRadius="10" Background="{DynamicResource IconTileBg}"
+                  BorderBrush="{DynamicResource IconTileBorder}" BorderThickness="1" VerticalAlignment="Center">
+            <Viewbox Width="22" Height="22" Stretch="Uniform">
+              <Canvas Width="20" Height="20">
+                <Path Data="M10,2.5 L10,17.5 M10,2.5 L7.6,5.6 M10,2.5 L12.4,5.6 M6,9.5 L6,12.2 M14,9.5 L14,12.2 M10,14 L6,10 M10,14 L14,10"
+                      Stroke="{DynamicResource Accent}" StrokeThickness="1.5" StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                <Ellipse Canvas.Left="4.3" Canvas.Top="11.5" Width="3.4" Height="3.4"
+                         Stroke="{DynamicResource Accent}" StrokeThickness="1.4"/>
+                <Rectangle Canvas.Left="12.4" Canvas.Top="12" Width="3.2" Height="3.2"
+                           Stroke="{DynamicResource Accent}" StrokeThickness="1.4"/>
+              </Canvas>
+            </Viewbox>
+          </Border>
+
+          <!-- 信息 -->
+          <StackPanel Grid.Column="1" Margin="13,0,13,0" VerticalAlignment="Center">
+            <DockPanel LastChildFill="True">
+              <Border DockPanel.Dock="Right" Background="{DynamicResource BadgeOkBg}"
+                      BorderBrush="{DynamicResource BadgeOkBorder}"
+                      BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0"
+                      VerticalAlignment="Center"
+                      Visibility="{Binding IsAndroid, Converter={StaticResource BoolToVis}}">
+                <StackPanel Orientation="Horizontal">
+                  <Path Data="M6,1.5 L12,1.5 A1.6,1.6 0 0 1 13.6,3.1 L13.6,16.9 A1.6,1.6 0 0 1 12,18.5 L6,18.5 A1.6,1.6 0 0 1 4.4,16.9 L4.4,3.1 A1.6,1.6 0 0 1 6,1.5 Z M7.3,16 L10.7,16"
+                        Stroke="{DynamicResource OkGreen}" StrokeThickness="1.3" Width="11" Height="12"
+                        Stretch="Fill" VerticalAlignment="Center"/>
+                  <TextBlock Text="ADB" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource OkGreen}"
+                             Margin="4,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Border>
+              <TextBlock Text="{Binding Description}" FontSize="13.5" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"
+                         VerticalAlignment="Center"/>
+            </DockPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+              <Border Background="{DynamicResource ChipBg}" BorderBrush="{DynamicResource ChipBorder}" BorderThickness="1"
+                      CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                <TextBlock Text="{Binding BusId}" FontFamily="Consolas" FontSize="11.5" Foreground="{DynamicResource LinkBlue}"/>
+              </Border>
+              <TextBlock Text="{Binding VidPid}" FontFamily="Consolas" FontSize="11.5"
+                         Foreground="{DynamicResource TextDim}" Margin="9,0,0,0" VerticalAlignment="Center"/>
+              <Border Background="{Binding StateBg}" CornerRadius="4" Padding="7,2"
+                      Margin="9,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding StateText}" FontSize="11" Foreground="{Binding StateFg}"/>
+              </Border>
+              <Border Background="{DynamicResource BadgeOkBg}" CornerRadius="4" Padding="7,2" Margin="6,0,0,0"
+                      VerticalAlignment="Center"
+                      Visibility="{Binding IsAutoAttach, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="自动附加" FontSize="11" Foreground="{DynamicResource OkGreen}"/>
+              </Border>
+            </StackPanel>
+          </StackPanel>
+
+          <!-- 快捷操作 -->
+          <Button Grid.Column="2" Tag="quick" Content="{Binding QuickActionText}"
+                  Style="{StaticResource BtnBase}" MinWidth="104" VerticalAlignment="Center"
+                  ToolTip="执行最合适的操作（等同双击该行）"/>
+        </Grid>
+      </Border>
+    </DataTemplate>
+
+  </Window.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- ============ 顶部警示条 ============ -->
+    <StackPanel Grid.Row="0">
+      <Border x:Name="UsbipdBanner" Background="{DynamicResource BannerErrBg}"
+              BorderBrush="{DynamicResource BannerErrBorder}"
+              BorderThickness="0,0,0,1" Padding="14,8" Visibility="Collapsed">
+        <DockPanel LastChildFill="False">
+          <TextBlock Foreground="{DynamicResource BannerErrText}" FontSize="12" VerticalAlignment="Center"
+                     TextWrapping="Wrap" MaxWidth="760"
+                     Text="未找到 usbipd-win。请先安装 usbipd-win 才能将 USB 设备映射到 WSL。"/>
+          <Button x:Name="UsbipdDlBtn" DockPanel.Dock="Right" Style="{StaticResource BtnSm}"
+                  Content="打开下载页"/>
+          <Button x:Name="InstallUsbipdBtn" DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}"
+                  Content="一键安装" Margin="0,0,8,0" Visibility="Collapsed"
+                  ToolTip="使用便携包内置的安装包（tools\usbipd）自动安装 usbipd-win"/>
+        </DockPanel>
+      </Border>
+      <Border x:Name="AdminBanner" Background="{DynamicResource BannerWarnBg}"
+              BorderBrush="{DynamicResource BannerWarnBorder}"
+              BorderThickness="0,0,0,1" Padding="14,8" Visibility="Collapsed">
+        <DockPanel LastChildFill="False">
+          <TextBlock Foreground="{DynamicResource BannerWarnText}" FontSize="12" VerticalAlignment="Center"
+                     TextWrapping="Wrap" MaxWidth="760"
+                     Text="当前未以管理员身份运行：共享 / 取消共享操作将逐次弹出 UAC 授权窗口。建议以管理员身份运行以获得最佳体验。"/>
+          <Button x:Name="ElevateBtn" DockPanel.Dock="Right" Style="{StaticResource BtnSm}"
+                  Content="以管理员身份重启"/>
+        </DockPanel>
+      </Border>
+    </StackPanel>
+
+    <!-- ============ 工具栏 ============ -->
+    <Border Grid.Row="1" Background="{DynamicResource BarBg}" BorderBrush="{DynamicResource BarBorder}"
+            BorderThickness="0,0,0,1" Padding="12,9">
+      <StackPanel Orientation="Horizontal">
+        <Button x:Name="RefreshBtn" Content="刷新" Style="{StaticResource BtnBase}"
+                ToolTip="重新扫描 USB 设备列表（F5）"/>
+        <CheckBox x:Name="AutoRefreshCheck" Content="自动刷新" Style="{StaticResource Switch}"
+                  Margin="14,0,0,0" VerticalAlignment="Center"
+                  ToolTip="每 3 秒自动刷新；设备插拔时立即刷新"/>
+        <ComboBox x:Name="DistroCombo" Style="{StaticResource DarkCombo}" Width="200"
+                  Margin="14,0,0,0" VerticalAlignment="Center"
+                  ToolTip="连接 USB 设备的目标 WSL 发行版"/>
+        <CheckBox x:Name="AdbCheck" Content="ADB 模式" Style="{StaticResource Switch}"
+                  Margin="14,0,0,0" VerticalAlignment="Center"
+                  ToolTip="连接 Android 设备到 WSL 时自动：①结束 Windows adb 进程（释放占用）→ ②连接 → ③在 WSL 内重启 adb 服务"/>
+        <Button x:Name="FixAdbBtn" Content="修复 ADB" Style="{StaticResource BtnBase}" Margin="14,0,0,0"
+                ToolTip="立即执行：Windows adb kill-server ＋ WSL 内 adb 服务重启"/>
+        <Button x:Name="SettingsBtn" Content="设置" Style="{StaticResource BtnBase}" Margin="8,0,0,0"
+                ToolTip="adb 路径、修复选项等设置"/>
+        <Button x:Name="ThemeToggleBtn" Content="浅色模式" Style="{StaticResource BtnBase}" Margin="8,0,0,0"
+                ToolTip="切换深色 / 浅色主题"/>
+      </StackPanel>
+    </Border>
+
+    <!-- ============ 设备列表 ============ -->
+    <Grid Grid.Row="2" Margin="10,6,10,6">
+      <ListBox x:Name="DeviceList" Background="Transparent" BorderThickness="0"
+               ItemTemplate="{StaticResource DeviceCard}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+               Foreground="{DynamicResource TextPrimary}">
+        <ListBox.ItemContainerStyle>
+          <Style TargetType="ListBoxItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                  <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                    <ContentPresenter/>
+                  </Border>
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource RowHover}"/>
+              </Trigger>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource RowSelected}"/>
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </ListBox.ItemContainerStyle>
+      </ListBox>
+      <TextBlock x:Name="EmptyHint" IsHitTestVisible="False" Visibility="Collapsed"
+                 HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                 Foreground="{DynamicResource TextFaint}">
+        <Run Text="未发现 USB 设备" FontSize="15"/>
+        <LineBreak/>
+        <Run Text="插入设备后将自动刷新" FontSize="12"/>
+      </TextBlock>
+    </Grid>
+
+    <!-- ============ 操作栏 ============ -->
+    <Border Grid.Row="3" Background="{DynamicResource BarBg}" BorderBrush="{DynamicResource BarBorder}"
+            BorderThickness="0,1,0,1" Padding="12,9">
+      <DockPanel LastChildFill="False">
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+          <Button x:Name="BindBtn" Content="共享" Style="{StaticResource BtnBase}"
+                  ToolTip="共享该设备，允许连接到 WSL（usbipd bind，需要管理员权限）"/>
+          <Button x:Name="UnbindBtn" Content="取消共享" Style="{StaticResource BtnBase}" Margin="8,0,0,0"
+                  ToolTip="取消共享资格，恢复未共享状态（已连接时会先自动断开）（usbipd unbind，需要管理员权限）"/>
+          <Button x:Name="AttachBtn" Content="连接到 WSL" Style="{StaticResource BtnPrimary}" Margin="18,0,0,0"
+                  ToolTip="将设备连接到 WSL（usbipd attach，ADB 模式开启时自动处理 adb 占用）"/>
+          <Button x:Name="DetachBtn" Content="断开连接" Style="{StaticResource BtnBase}" Margin="8,0,0,0"
+                  ToolTip="断开设备与 WSL 的连接，交还给 Windows，并自动拉起 adb 服务（usbipd detach）"/>
+          <Button x:Name="AutoAttachBtn" Content="自动连接" Style="{StaticResource BtnBase}" Margin="8,0,0,0"
+                  ToolTip="后台守护：设备每次插入自动连接到 WSL（usbipd --auto-attach）"/>
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
+                   Text="双击设备行 = 一键连接 / 断开" Foreground="{DynamicResource TextFaint}" FontSize="11.5"/>
+      </DockPanel>
+    </Border>
+
+    <!-- ============ 日志 ============ -->
+    <Grid Grid.Row="4" Margin="12,7,12,4">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <DockPanel LastChildFill="False">
+        <Button x:Name="LogHeaderBtn" Style="{StaticResource BtnGhost}" Content="▾ 运行日志"
+                FontSize="12"/>
+        <Button x:Name="ClearLogBtn" DockPanel.Dock="Right" Style="{StaticResource BtnGhost}"
+                Content="清空" FontSize="11.5" Foreground="{DynamicResource TextFaint}"/>
+      </DockPanel>
+      <Border x:Name="LogPanel" Grid.Row="1" Margin="0,6,0,0" Background="{DynamicResource LogBg}"
+              BorderBrush="{DynamicResource BarBorder}" BorderThickness="1" CornerRadius="8" Height="150">
+        <RichTextBox x:Name="LogBox" Background="Transparent" Foreground="{DynamicResource TextBody}"
+                     BorderThickness="0" IsReadOnly="True" IsReadOnlyCaretVisible="True"
+                     FontFamily="Consolas, Microsoft YaHei UI" FontSize="11.5" Margin="8,6"
+                     VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+      </Border>
+    </Grid>
+
+    <!-- ============ 状态栏 ============ -->
+    <Border Grid.Row="5" Background="{DynamicResource BarBg}" Padding="12,7">
+      <DockPanel LastChildFill="False">
+        <StackPanel Orientation="Horizontal">
+          <ProgressBar x:Name="BusyBar" Width="110" Height="4" IsIndeterminate="True"
+                       Visibility="Collapsed" VerticalAlignment="Center"
+                       Foreground="{DynamicResource Accent}" Background="{DynamicResource ProgressTrack}" BorderThickness="0"/>
+          <TextBlock x:Name="StatusText" Text="就绪" Foreground="{DynamicResource TextDim}" FontSize="11.5"
+                     Margin="10,0,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
+        <TextBlock x:Name="MetaText" DockPanel.Dock="Right" HorizontalAlignment="Right"
+                   VerticalAlignment="Center" Foreground="{DynamicResource TextFaint}" FontSize="11.5" Text=""/>
+      </DockPanel>
+    </Border>
+  </Grid>
+</Window>
