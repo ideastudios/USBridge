@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build (csc.exe, .NET Framework 4.8 WPF)
+        shell: cmd
+        run: build.cmd
+
+      - name: Bundle portable (adb + usbipd-win MSI)
+        shell: cmd
+        run: pack.cmd
+
+      - name: Compute version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}" -replace '^v', ''
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Rename artifact and compute SHA256
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          Copy-Item dist/USBridge-portable.zip "USBridge-$v-portable.zip"
+          $hash = (Get-FileHash "USBridge-$v-portable.zip" -Algorithm SHA256).Hash
+          Set-Content -Path "USBridge-$v-portable.zip.sha256" -Value $hash -Encoding ascii
+          Write-Output "artifact: USBridge-$v-portable.zip (sha256=$hash)"
+
+      - name: Upload release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            USBridge-*-portable.zip
+            USBridge-*-portable.zip.sha256
+          generate_release_notes: true
+
+      - name: Update feed branch (latest.json)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $hash = (Get-FileHash "USBridge-$v-portable.zip" -Algorithm SHA256).Hash.ToLower()
+          $json = @"
+          {
+            "version": "$v",
+            "url": "https://github.com/ideastudios/USBridge/releases/download/v$v/USBridge-$v-portable.zip",
+            "sha256": "$hash",
+            "notes": "https://github.com/ideastudios/USBridge/releases/tag/v$v"
+          }
+          "@
+          git config user.name "ideastudios"
+          git config user.email "16684417+ideastudios@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/ideastudios/USBridge.git"
+          git fetch origin feed 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            git checkout -B feed origin/feed
+          } else {
+            git checkout --orphan feed
+            git rm -rf --ignore-unmatch . 2>$null
+          }
+          Set-Content -Path latest.json -Value $json -Encoding utf8
+          git add latest.json
+          git commit -m "feed: release v$v"
+          git push origin feed
