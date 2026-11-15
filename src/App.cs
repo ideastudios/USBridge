@@ -15,7 +15,7 @@ namespace WslUsbManager
     {
         public const string AppName = "USBridge";
         public const string AppNameCn = "WSL USB 管家";
-        public const string AppVersion = "1.2.0";
+        public const string AppVersion = "1.3.0";
         public const string UsbipdHome = "https://github.com/dorssel/usbipd-win/releases";
         public const string ReferenceProject = "https://github.com/nickbeth/wsl-usb-manager";
 

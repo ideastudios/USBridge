@@ -1009,6 +1009,12 @@ namespace WslUsbManager
             Button okBtn = (Button)dlg.FindName("OkBtn");
             Button cancelBtn = (Button)dlg.FindName("CancelBtn");
             TextBlock linkText = (TextBlock)dlg.FindName("LinkText");
+            TextBlock verText = (TextBlock)dlg.FindName("VerText");
+            Button checkUpdateBtn = (Button)dlg.FindName("CheckUpdateBtn");
+            TextBlock updateStatus = (TextBlock)dlg.FindName("UpdateStatusText");
+
+            verText.Text = App.AppName + " v" + App.AppVersion + " · " + App.AppNameCn;
+            checkUpdateBtn.Click += delegate { RunUpdateCheck(dlg, checkUpdateBtn, updateStatus); };
 
             adbBox.Text = Settings.Get(Settings.KAdbPath, "");
             fixAlways.IsChecked = Settings.GetBool(Settings.KAdbFixAlways, false);
@@ -1069,6 +1075,105 @@ namespace WslUsbManager
             {
                 string p2 = Adb.Resolve();
                 Log("设置已保存。" + (p2 != null ? "adb: " + p2 : "adb: 未找到"), LogDim);
+            }
+        }
+
+        /// <summary>
+        /// 检查应用更新（feed 分支 latest.json → GitHub Releases API 兜底）。
+        /// 发现新版本时确认下载便携包到「下载\USBridge」，feed 来源自动校验 SHA256。
+        /// </summary>
+        private async void RunUpdateCheck(Window dlg, Button btn, TextBlock status)
+        {
+            btn.IsEnabled = false;
+            status.Text = "正在检查更新…";
+            Log("正在检查更新…", LogCmd);
+            try
+            {
+                UpdateService.CheckResult r = await UpdateService.CheckAsync();
+
+                if (!r.Success)
+                {
+                    status.Text = r.Message;
+                    Log("检查更新失败: " + r.Message, LogErr);
+                    return;
+                }
+                if (!r.HasNewVersion)
+                {
+                    status.Text = r.Message;
+                    Log("✓ " + r.Message, LogOk);
+                    return;
+                }
+
+                Log("发现新版本 v" + r.LatestVersion + "（当前 v" + App.AppVersion + "）", LogWarn);
+
+                string sizeInfo = r.AssetSize > 0 ? "，安装包约 " + (r.AssetSize / 1024.0 / 1024.0).ToString("F1") + " MB" : "";
+                string prompt = "发现新版本 v" + r.LatestVersion + "（当前 v" + App.AppVersion + "）" + sizeInfo + "。\n\n是否现在下载？";
+                if (!string.IsNullOrEmpty(r.Notes))
+                    prompt += "\n\n更新说明：\n" + r.Notes;
+                MessageBoxResult go = MessageBox.Show(dlg, prompt, "发现新版本",
+                    MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+                if (go != MessageBoxResult.Yes)
+                {
+                    status.Text = "已跳过自动下载。";
+                    Log("已跳过自动下载。", LogDim);
+                    if (!string.IsNullOrEmpty(r.NotesUrl))
+                        App.OpenUrl(r.NotesUrl);   // 改为手动下载
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(r.DownloadUrl))
+                {
+                    status.Text = "更新源未提供下载地址，请到 Release 页面手动下载。";
+                    if (!string.IsNullOrEmpty(r.NotesUrl)) App.OpenUrl(r.NotesUrl);
+                    return;
+                }
+
+                string fileName = r.DownloadUrl.Substring(r.DownloadUrl.LastIndexOf('/') + 1);
+                string destDir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "USBridge");
+                System.IO.Directory.CreateDirectory(destDir);
+                string dest = System.IO.Path.Combine(destDir, fileName);
+
+                Log("开始下载: " + r.DownloadUrl, LogCmd);
+                long lastPct = -1;
+                await UpdateService.DownloadAsync(r.DownloadUrl, dest, delegate(long read, long total)
+                {
+                    long pct = read * 100 / total;
+                    if (pct == lastPct) return;
+                    lastPct = pct;
+                    status.Text = "下载中 " + pct + "%（" + (read / 1048576.0).ToString("F1") +
+                                  " / " + (total / 1048576.0).ToString("F1") + " MB）";
+                });
+                Log("✓ 下载完成: " + dest, LogOk);
+
+                // SHA256 校验（feed 来源提供校验值）
+                if (r.Sha256.Length > 0)
+                {
+                    status.Text = "正在校验 SHA256…";
+                    string actual = await Task.Run(delegate { return UpdateService.Sha256OfFile(dest); });
+                    if (!string.Equals(actual, r.Sha256, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { System.IO.File.Delete(dest); } catch { }
+                        status.Text = "SHA256 校验失败，已删除损坏文件，请重试。";
+                        Log("✗ SHA256 校验失败（期望 " + r.Sha256 + "，实际 " + actual + "）", LogErr);
+                        return;
+                    }
+                    Log("✓ SHA256 校验通过", LogOk);
+                }
+
+                status.Text = "✓ 已下载: " + dest;
+                Log("更新包已就绪，解压后替换旧版即可完成升级。", LogOk);
+                try { Process.Start("explorer.exe", "/select,\"" + dest + "\""); } catch { }
+            }
+            catch (Exception ex)
+            {
+                status.Text = "更新失败: " + ex.Message;
+                Log("更新下载失败: " + ex.Message, LogErr);
+            }
+            finally
+            {
+                btn.IsEnabled = true;
             }
         }
 

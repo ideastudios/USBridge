@@ -28,13 +28,14 @@ echo Building...
   /out:"%OUTDIR%\USBridge.exe" ^
   /r:System.dll /r:System.Core.dll /r:System.Xml.dll /r:System.Xaml.dll ^
   /r:System.Drawing.dll /r:System.Windows.Forms.dll ^
+  /r:System.Web.Extensions.dll ^
   /r:"%WPFLIB%\WindowsBase.dll" ^
   /r:"%WPFLIB%\PresentationCore.dll" ^
   /r:"%WPFLIB%\PresentationFramework.dll" ^
   /resource:src\MainWindow.xaml ^
   /resource:src\SettingsDialog.xaml ^
   /resource:assets\logo.ico,App.logo.ico ^
-  src\App.cs src\Main.cs src\ProcessRunner.cs src\Settings.cs src\Theme.cs src\Tray.cs src\Usbipd.cs src\Wsl.cs src\Adb.cs
+  src\App.cs src\Main.cs src\ProcessRunner.cs src\Settings.cs src\Theme.cs src\Tray.cs src\Usbipd.cs src\Wsl.cs src\Adb.cs src\Update.cs
 
 if errorlevel 1 (
     echo.

@@ -63,6 +63,7 @@ The UI intentionally avoids the literal translations (bind / attach) and uses mo
 - **Elevation friendly**: share/unshare trigger a single UAC prompt when not elevated; one-click admin restart in the banner
 - **Dark / Light themes**: GitHub Dark / Light, live switching, persisted, title bar follows
 - **System tray**: left-click to restore, right-click quick menu, optional minimize/close-to-tray
+- **In-app update check**: Settings → *Check for Updates* compares against GitHub releases (feed branch `latest.json` first, Releases API as fallback) and downloads the portable package with SHA256 verification
 - **Single instance**: launching again just brings the existing window to the front
 - **Color-coded activity log**: every step and error, collapsible
 

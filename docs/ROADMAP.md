@@ -16,10 +16,10 @@
 - 中文 / 英文双语命名与全中文界面；150% DPI 适配；彩色运行日志
 - 单实例（重复启动自动唤回已有窗口）
 - GitHub Actions 自动发布流水线（便携包 zip + SHA256 + feed）
+- 应用内「检查更新」：设置页一键检查（feed 分支 `latest.json` 优先，含 SHA256 校验；GitHub Releases API 兜底），确认后下载便携包到「下载\USBridge」
 
 ## 候选（未实现）
 
-- 应用内「检查更新」（feed 已就绪：`feed` 分支 `latest.json`）
 - 单文件集成：将 adb 与 usbipd MSI 作为资源嵌入 exe，按需提取
 - 跨会话自动连接守护的精确停止（WMI 按命令行枚举 usbipd 进程）
 - 多实例模式（可配置关闭单实例锁）
